@@ -58,6 +58,7 @@ world-happiness-dashboard/
 │   ├── WHR2024.csv
 │   └── country_region_lookup.csv
 ├── scripts/              # Helper scripts for data preparation
+│   ├── corrupt_data.py
 │   └── create_lookup.py
 ├── .gitignore            # Specifies files for Git to ignore
 ├── app.py                # The main Streamlit application script
