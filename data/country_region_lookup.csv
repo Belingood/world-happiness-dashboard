@@ -9,7 +9,7 @@ Austria,Western Europe
 Azerbaijan,Commonwealth of Independent States
 Bahrain,Middle East and North Africa
 Bangladesh,South Asia
-Belarus,Commonwealth of Independent States
+Belarus,
 Belgium,Western Europe
 Benin,Sub-Saharan Africa
 Bolivia,Latin America and Caribbean
@@ -26,12 +26,13 @@ Chile,Latin America and Caribbean
 China,East Asia
 Colombia,Latin America and Caribbean
 Comoros,Sub-Saharan Africa
-Congo,Sub-Saharan Africa
+Congo,
 Congo (Brazzaville),Sub-Saharan Africa
 Congo (Kinshasa),Sub-Saharan Africa
 Costa Rica,Latin America and Caribbean
 Croatia,Central and Eastern Europe
 Cyprus,Western Europe
+North Cyprus,Western Europe
 Czechia,Central and Eastern Europe
 Denmark,Western Europe
 Dominican Republic,Latin America and Caribbean
@@ -40,6 +41,7 @@ Egypt,Middle East and North Africa
 El Salvador,Latin America and Caribbean
 Estonia,Central and Eastern Europe
 Eswatini,Sub-Saharan Africa
+"Eswatini, Kingdom of",
 Ethiopia,Sub-Saharan Africa
 Finland,Western Europe
 France,Western Europe
@@ -100,11 +102,11 @@ New Zealand,North America and ANZ
 Nicaragua,Latin America and Caribbean
 Niger,Sub-Saharan Africa
 Nigeria,Sub-Saharan Africa
-North Cyprus,Western Europe
+North Cyprus,
 North Macedonia,Central and Eastern Europe
 Norway,Western Europe
 Pakistan,South Asia
-Palestinian Territories,Middle East and North Africa
+Palestinian Territories,
 Panama,Latin America and Caribbean
 Paraguay,Latin America and Caribbean
 Peru,Latin America and Caribbean
@@ -113,7 +115,7 @@ Poland,Central and Eastern Europe
 Portugal,Western Europe
 Romania,Central and Eastern Europe
 Russia,Commonwealth of Independent States
-Rwanda,Sub-Saharan Africa
+Rwanda,
 Saudi Arabia,Middle East and North Africa
 Senegal,Sub-Saharan Africa
 Serbia,Central and Eastern Europe
@@ -134,15 +136,16 @@ Tanzania,Sub-Saharan Africa
 Thailand,Southeast Asia
 Togo,Sub-Saharan Africa
 Tunisia,Middle East and North Africa
+Turkey,
 Turkiye,Middle East and North Africa
-Turkmenistan,Commonwealth of Independent States
+Turkmenistan,
 Uganda,Sub-Saharan Africa
 Ukraine,Commonwealth of Independent States
 United Arab Emirates,Middle East and North Africa
 United Kingdom,Western Europe
 United States,North America and ANZ
 Uruguay,Latin America and Caribbean
-Uzbekistan,Commonwealth of 'Independent States'
+Uzbekistan,Commonwealth of Independent States
 Venezuela,Latin America and Caribbean
 Vietnam,Southeast Asia
 Yemen,Middle East and North Africa
