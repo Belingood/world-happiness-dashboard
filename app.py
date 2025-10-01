@@ -13,7 +13,6 @@ st.set_page_config(page_title="Analiza World Happiness Report", page_icon="😊"
 
 
 # --- 3. FUNKCJE POMOCNICZE ---
-# Funkcja standardize_columns pozostaje bez zmian
 def standardize_columns(dataframe):
     df_original = dataframe.copy()
     rename_map = {
@@ -52,6 +51,7 @@ def standardize_columns(dataframe):
 
 @st.cache_data
 def load_lookup_data():
+    """Ładuje i cachuje plik referencyjny, aby nie czytać go za każdym razem."""
     try:
         lookup_path = os.path.join('data', 'country_region_lookup.csv')
         df_lookup = pd.read_csv(lookup_path)
@@ -71,11 +71,9 @@ st.markdown("---")
 st.markdown("### Krok 1: Prześlij plik z danymi")
 uploaded_file = st.file_uploader("Wybierz plik CSV", type="csv")
 
-# Инициализация session_state при первой загрузке
 if 'data_cleaned' not in st.session_state:
     st.session_state.data_cleaned = False
 
-# Сброс состояния при загрузке нового файла
 if uploaded_file and uploaded_file.name != st.session_state.get('last_file_name', ''):
     st.session_state.data_cleaned = False
     st.session_state.last_file_name = uploaded_file.name
@@ -84,13 +82,11 @@ if uploaded_file is not None:
     df_lookup = load_lookup_data()
 
     if df_lookup is not None:
-        # --- ETAP 1: PRZETWARZANIE WSTĘPNE ---
         df_raw = pd.read_csv(uploaded_file)
         df_processed = standardize_columns(df_raw)
 
         canonical_names = df_lookup['canonical_name'].tolist()
 
-        # Automatyczne mapowanie
         unmatched_countries = []
         mapping = {}
         for country in df_processed['Country'].dropna().unique():
@@ -103,35 +99,27 @@ if uploaded_file is not None:
 
         df_processed['canonical_name'] = df_processed['Country'].map(mapping)
 
-        # --- ETAP 2: INTERAKTYWNE REWIZJA (JEŚLI POTRZEBNE) ---
         if unmatched_countries and not st.session_state.data_cleaned:
             with st.expander("⚠️ Przegląd Nierozpoznanych Krajów - Wymagana Akcja!", expanded=True):
                 st.warning(
                     "Nie udało się automatycznie dopasować wszystkich krajów. Proszę, zweryfikuj poniższe propozycje.")
-
                 user_choices = {}
                 for country in unmatched_countries:
                     cleaned_name = country.replace('*', '').strip()
                     best_guesses = [guess[0] for guess in process.extract(cleaned_name, canonical_names, limit=3)]
                     options = best_guesses + ["(Pomiń / Pozostaw oryginalną nazwę)"]
-
-                    user_choices[country] = st.selectbox(
-                        f"Wybierz poprawne dopasowanie для **'{country}'**:",
-                        options, index=0, key=f"select_{country}"
-                    )
+                    user_choices[country] = st.selectbox(f"Wybierz poprawne dopasowanie dla **'{country}'**:", options,
+                                                         index=0, key=f"select_{country}")
 
                 if st.button("Zastosuj i zweryfikuj poprawki"):
-                    # Budujemy finalne mapowanie
                     final_mapping = mapping.copy()
                     for original, choice in user_choices.items():
                         if choice != "(Pomiń / Pozostaw oryginalną nazwę)":
                             final_mapping[original] = choice
 
-                    # --- НОВЫЙ БЛОК: ПРОВЕРКА НА КОНФЛИКТЫ ---
                     chosen_canonical_names = list(final_mapping.values())
                     counts = pd.Series(chosen_canonical_names).value_counts()
                     duplicates = counts[counts > 1]
-
                     if not duplicates.empty:
                         st.error(
                             "Wykryto konflikt! Kilka różnych krajów zostało zmapowanych do tej samej nazwy kanonicznej. Proszę poprawić swój wybór.")
@@ -140,36 +128,25 @@ if uploaded_file is not None:
                             st.write(
                                 f"- Nazwa **'{dup_name}'** została wybrana dla: `{', '.join(conflicting_originals)}`")
                     else:
-                        # Если конфликтов нет, применяем и сохраняем состояние
                         df_processed['canonical_name'] = df_processed['Country'].map(final_mapping)
                         st.session_state['data_cleaned'] = True
                         st.success("Poprawki zostały pomyślnie zastosowane! Brak konfliktów.")
-                        st.rerun()  # Перезапускаем скрипт, чтобы скрыть этот блок и показать результаты
-
-        else:  # Если все zmapowano автоматически или уже исправлено
+                        st.rerun()
+        else:
             st.session_state.data_cleaned = True
 
-        # --- ETAP 3: FINALIZACJA I WIZUALIZACJA (TYLKO GDY DANE SĄ GOTOWE) ---
         if st.session_state.data_cleaned:
+            st.header("Etap 1: Przetwarzanie i Czyszczenie Danych")
             df_processed['canonical_name'].fillna(df_processed['Country'], inplace=True)
-
-            if 'Region' in df_processed.columns:
-                df_processed = df_processed.drop(columns=['Region'])
-
+            if 'Region' in df_processed.columns: df_processed = df_processed.drop(columns=['Region'])
             df_enriched = pd.merge(df_processed, df_lookup, on='canonical_name', how='left')
             df_enriched['Country'] = df_enriched['canonical_name']
             df_enriched.rename(columns={'region': 'Region'}, inplace=True)
             df_enriched.drop(columns=['canonical_name'], inplace=True)
             df_enriched['Region'].fillna('Brak danych', inplace=True)
-
-            if not unmatched_countries:  # Показываем сообщение только если не было ручного ревью
-                st.success("Dane załadowane, przetworzone i gotowe do analizy!")
-
             df_processed = df_enriched
 
-            st.header("Etap 2: Analiza Danych")
             st.subheader("Obsługa brakujących wartości")
-            # ... (остальная часть кода без изменений) ...
             missing_values = df_processed.isnull().sum()
             missing_values = missing_values[missing_values > 0]
             if not missing_values.empty:
@@ -202,8 +179,9 @@ if uploaded_file is not None:
             else:
                 df_filtered = df_cleaned
 
+            st.header("Etap 2: Wizualizacja i Automatyczna Analiza")
             st.subheader("Tabela danych")
-            st.dataframe(df_filtered, height=400)
+            st.dataframe(df_filtered, height=300)
 
             st.subheader("Mapa wskaźnika szczęścia na świecie")
             fig_map = px.choropleth(df_filtered, locations='Country', locationmode='country names',
@@ -217,6 +195,38 @@ if uploaded_file is not None:
                                      title='Zależność wskaźnika szczęścia od PKB per capita', trendline='ols')
             st.plotly_chart(fig_scatter, use_container_width=True)
 
+            with st.container():
+                st.markdown("#### 🤖 Automatyczna Analiza Wykresu:")
+                correlation = df_filtered['GDP per capita'].corr(df_filtered['Happiness Score'])
+
+
+                def interpret_correlation(corr_value):
+                    if corr_value > 0.7:
+                        return f"**Bardzo silna dodatnia zależność** (współczynnik korelacji: {corr_value:.2f}). Wzrost PKB jest silnie powiązany ze wzrostem poczucia szczęścia."
+                    elif corr_value > 0.4:
+                        return f"**Umiarkowana dodatnia zależność** (współczynnik korelacji: {corr_value:.2f}). Istnieje zauważalny, ale nie idealny związek między PKB a szczęściem."
+                    elif corr_value > 0.1:
+                        return f"**Słaba dodatnia zależność** (współczynnik korelacji: {corr_value:.2f}). PKB ma niewielki wpływ na poziom szczęścia."
+                    else:
+                        return "Brak znaczącej zależności."
+
+
+                st.info(interpret_correlation(correlation))
+
+                X = df_filtered['GDP per capita'].dropna()
+                y = df_filtered.loc[X.index, 'Happiness Score'].dropna()
+                X = sm.add_constant(X)
+                model = sm.OLS(y, X).fit()
+                residuals = model.resid
+                happiest_for_gdp_idx = residuals.idxmax()
+                unhappiest_for_gdp_idx = residuals.idxmin()
+                happiest_country = df_filtered.loc[happiest_for_gdp_idx, 'Country']
+                unhappiest_country = df_filtered.loc[unhappiest_for_gdp_idx, 'Country']
+                st.markdown(f"""
+                - **Najbardziej "szczęśliwy" kraj jak na swoje bogactwo** (najdalej powyżej linii trendu): **{happiest_country}**
+                - **Najmniej "szczęśliwy" kraj jak na swoje bogactwo** (najdalej poniżej linii trendu): **{unhappiest_country}**
+                """)
+
             st.subheader("Które czynniki są najważniejsze dla poczucia szczęścia?")
             numeric_cols = ['Happiness Score', 'GDP per capita', 'Social Support', 'Life Expectancy', 'Freedom',
                             'Generosity', 'Corruption']
@@ -227,8 +237,22 @@ if uploaded_file is not None:
                 sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', ax=ax)
                 ax.set_title('Macierz korelacji czynników wpływających na szczęście')
                 st.pyplot(fig_heatmap)
+
+                with st.container():
+                    st.markdown("#### 🤖 Automatyczny Ranking Czynników:")
+                    corr_with_happiness = correlation_matrix['Happiness Score'].drop('Happiness Score').sort_values(
+                        ascending=False)
+                    st.write(
+                        "Pięć najważniejszych czynników, które (według tych danych) mają największy pozytywny wpływ na szczęście:")
+                    top_factors = corr_with_happiness.head(5)
+                    cols = st.columns(len(top_factors))
+                    for i, (factor, value) in enumerate(top_factors.items()):
+                        with cols[i]:
+                            st.metric(label=f"**{i + 1}. {factor}**", value=f"{value:.2f}")
+            else:
+                st.warning("Niewystarczająca liczba danych do zbudowania macierzy korelacji.")
+
 else:
-    # Сброс состояния, если файл был выгружен
     if 'data_cleaned' in st.session_state:
         del st.session_state['data_cleaned']
     st.info("Proszę przesłać plik CSV, aby rozpocząć analizę.")
